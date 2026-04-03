@@ -1,0 +1,5 @@
+node_modules
+.env
+/generated/prisma
+package*.json
+prisma.config.ts
