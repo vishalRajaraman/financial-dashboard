@@ -1,13 +1,46 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//Defining roles as enum  for consistency
+enum Role {
+  VIEWER
+  ANALYST
+  ADMIN
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+//User Model
+model User {
+  id        String            @id @default(uuid()) //primary  key  and random unique id generation using uuid()
+  name      String
+  email     String            @unique
+  password  String
+  role      Role              @default(VIEWER)
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  records   FinancialRecord[]
+  //A user can have multiple records indicating one to many relationship
+}
+
+model FinancialRecord {
+  id        String          @id @default(uuid()) //primary key
+  amount    Float
+  type      TransactionType
+  category  String
+  date      DateTime //actual date of the TransactionType
+  notes     String? //optional field
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  userId    String //foreign key
+  user      User            @relation(fields: [userId], references: [id])
 }
