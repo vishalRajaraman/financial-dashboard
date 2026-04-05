@@ -22,7 +22,7 @@ router.get("/", authorizeAnalystOrAdmin, getRecords);
 
 // ONLY Admins can modify records
 router.post("/", authorizeAdmin, createRecord);
-router.patch("/:id", authorizeAdmin, updateRecord); //patch instead of put aa it provides the feature of partial updation
+router.patch("/:id", authorizeAdmin, updateRecord); //patch instead of put as it provides the feature of partial updation
 router.delete("/:id", authorizeAdmin, deleteRecord);
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient(); // Added 'new' here to properly initialize!
+const prisma = new PrismaClient();
 
 //creating a financial record (Admin only)
 const createRecord = async (req, res) => {
@@ -12,7 +12,7 @@ const createRecord = async (req, res) => {
         category,
         date: new Date(date), //converting input (date) from json String  to  type Date
         notes,
-        userId: req.user.id, //
+        userId: req.user.id,
       },
     });
     res.status(201).json({ status: "success", data: newRecord });
@@ -34,7 +34,7 @@ const getRecords = async (req, res) => {
       limit = 10, //number of records per page or chunk used for pagination
     } = req.query; //using req.query as get requests dont have a body
 
-    let queryConditions = {}; //building the conditions for the filtering query
+    let queryConditions = { isDeleted: false }; //building the conditions for the filtering query
 
     if (type) {
       queryConditions.type = type;
@@ -83,20 +83,29 @@ const getRecords = async (req, res) => {
 };
 
 //updating a record (Admin Only)
-// 3. Update a Record (Admin Only)
 const updateRecord = async (req, res) => {
   try {
     const { id } = req.params;
     const { amount, type, category, date, notes } = req.body;
 
+    const existingRecord = await prisma.financialRecord.findFirst({
+      where: { id, isDeleted: false }, // if record is deleted we cant update it
+    });
+
+    if (!existingRecord) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Record not found." });
+    }
+    //if user  dont want to  update  every attribute those attribute values are not sent by the front end so they are undefined .if a value is undefined we will not  update that individual value
     const updatedRecord = await prisma.financialRecord.update({
       where: { id }, //updating financial records using  id of the record
       data: {
-        ...(amount && { amount: parseFloat(amount) }), //... helps us to achieve partial updation of the record
-        ...(type && { type }),
-        ...(category && { category }),
-        ...(date && { date: new Date(date) }),
-        ...(notes && { notes }),
+        ...(amount !== undefined && { amount: parseFloat(amount) }), //... helps us to achieve partial updation of the record
+        ...(type !== undefined && { type }),
+        ...(category !== undefined && { category }),
+        ...(date !== undefined && { date: new Date(date) }),
+        ...(notes !== undefined && { notes }),
       },
     });
 
@@ -105,10 +114,23 @@ const updateRecord = async (req, res) => {
     res.status(500).json({ status: "error", message: error.message });
   }
 };
+
 // Deletion of a record (Soft Delete) - Admin Only
 const deleteRecord = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const existingRecord = await prisma.financialRecord.findFirst({
+      where: { id, isDeleted: false },
+    });
+
+    if (!existingRecord) {
+      return res.status(404).json({
+        status: "error",
+        message: "Record not found or already deleted.",
+      });
+    }
+
     const deletedRecord = await prisma.financialRecord.update({
       where: { id },
       data: {
@@ -125,4 +147,5 @@ const deleteRecord = async (req, res) => {
     res.status(500).json({ status: "error", message: error.message });
   }
 };
+
 module.exports = { createRecord, getRecords, updateRecord, deleteRecord };
