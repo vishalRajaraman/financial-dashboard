@@ -5,6 +5,7 @@ const envAccess = require("dotenv");
 const authRoutes = require("./routes/authRoutes");
 const recordRoutes = require("./routes/financialRecordRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const { limiter } = require("./middlewares/rateLimiter");
 envAccess.config();
 
 const server = express();
@@ -12,8 +13,10 @@ const server = express();
 //middlewares
 server.use(helmet());
 server.use(cors());
-server.use(express.json());
+server.use(express.json()); // parses incomming requests to json
+server.use(limiter); //applying rate limiting to every endpoint
 
+//routing requests
 server.use("/auth", authRoutes);
 server.use("/records", recordRoutes);
 server.use("/dashboard", dashboardRoutes);
