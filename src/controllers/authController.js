@@ -1,8 +1,8 @@
-const { prismaClient } = require("@prisma/client");
+const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const prisma = new prismaClient();
+const prisma = new PrismaClient();
 
 //async functions
 // registration of a new user
@@ -24,11 +24,11 @@ const register = async (req, res) => {
       data: {
         name,
         email,
-        password,
+        password: hashedPassword,
         role, // If this is undefined, Prisma automatically  inserts VIEWER as it is the default value
       },
     });
-    res.status(201).json({
+    res.status(200).json({
       status: "success",
       message: "User registered successfully",
       data: {
@@ -48,7 +48,7 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     //finding user by email
-    const user = prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return res
         .status(400)
